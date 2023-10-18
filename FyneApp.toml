@@ -1,0 +1,6 @@
+[Details]
+  Icon = "resources/icon.png"
+  Name = "GitHub Notify"
+  ID = "org.mygithub.notification"
+  Version = "1.0.0"
+  Build = 2
