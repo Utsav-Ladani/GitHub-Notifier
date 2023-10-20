@@ -1,7 +1,7 @@
 ## GitHub Notifier
 It notifies you on the desktop when you get a notification on GitHub. GitHub didn't provide a push notification service for a desktop device, so I made this.
 
-<img width="402" alt="Screenshot 2023-10-18 at 6 29 21 PM" src="https://github.com/Utsav-Ladani/GitHub-Notifier/assets/55320836/47d20ca7-b5fe-42c9-a245-69a4daf9afe0">
+<img width="402" alt="Screenshot 2023-10-18 at 6 29 21 PM" src="./screenshot.png">
 
 ## How to build
 1. Download the latest code from the `main` branch.

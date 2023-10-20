@@ -29,14 +29,19 @@ var ctxMap map[string]*context.CancelFunc
 var notificationList []*github.Notification
 var notificationListComponent *widget.List
 
-// theme colors
-var (
-	ghGreenColor color.NRGBA = color.NRGBA{0x2c, 0xa4, 0x2c, 0xff}
-	bgItemColor  color.NRGBA = color.NRGBA{0xd0, 0xd0, 0xd0, 0x20}
-)
+type MyNotification struct {
+	Status       bool
+	ProfileImage string
+	ProfileName  string
+	Type         string
+	Message      string
+	Time         time.Time
+}
 
 func main() {
 	notifierApp = app.NewWithID(APP_ID)
+
+	notifierApp.Settings().SetTheme(&myTheme{})
 
 	window = notifierApp.NewWindow("Github Notifications")
 
@@ -74,7 +79,7 @@ func fetchNotifications(ctx context.Context) ([]*github.Notification, error) {
 	client := github.NewClient(nil).WithAuthToken(github_token)
 
 	opt := &github.NotificationListOptions{
-		Since: time.Now().AddDate(0, 0, -10),
+		Since: time.Now().AddDate(0, 0, -5),
 	}
 
 	ctxTimeOut, cancel := context.WithTimeout(ctx, time.Second*10)
@@ -247,73 +252,38 @@ func addNotificationListUI() *widget.List {
 			return len(notificationList)
 		},
 		func() fyne.CanvasObject {
-			title := canvas.NewText("Title", color.White)
-			title.TextStyle.Bold = true
-			title.TextSize = 16
-
-			// github green color
-			title.Color = ghGreenColor
-
-			content := widget.NewRichTextWithText("Content")
-			content.Truncation = fyne.TextTruncateEllipsis
-
-			markAsReadButton := widget.NewButton("Mark As Read", func() {
-				log.Println("Mark As Read")
-			})
-			markAsReadButton.Importance = widget.HighImportance
-
-			openInGithubButton := widget.NewButton("Open In Github", func() {
-				log.Println("Open In Github")
-			})
-			openInGithubButton.Importance = widget.SuccessImportance
-
-			buttonContainer := container.NewHBox(markAsReadButton, openInGithubButton)
-
-			iteamContainer := container.NewPadded(container.NewVBox(title, content, buttonContainer))
-
-			bgRect := canvas.NewRectangle(bgItemColor)
-
-			return container.NewStack(bgRect, iteamContainer)
+			return NewModernUI()
 		},
 		func(id widget.ListItemID, item fyne.CanvasObject) {
 			title := notificationList[id].GetRepository().GetFullName()
 			content := notificationList[id].GetSubject().GetTitle()
+			time := notificationList[id].GetUpdatedAt().Time
 
-			iteamContainer := item.(*fyne.Container).Objects[1].(*fyne.Container).Objects[0].(*fyne.Container)
-
-			titleCompoenent := iteamContainer.Objects[0].(*canvas.Text)
-			contentComponent := iteamContainer.Objects[1].(*widget.RichText)
-
-			titleCompoenent.Text = title
-			contentComponent.ParseMarkdown(content)
-
-			buttonContainer := iteamContainer.Objects[2].(*fyne.Container)
-
-			markAsReadButton := buttonContainer.Objects[0].(*widget.Button)
-			openInGithubButton := buttonContainer.Objects[1].(*widget.Button)
-
-			markAsReadButton.OnTapped = func() {
-				markAsReadButton.Disable()
+			modernUI := item.(*ModernUI)
+			modernUI.SetStatus(false)
+			modernUI.SetProfileName(title)
+			modernUI.SetMessage(content)
+			modernUI.SetTime(time)
+			modernUI.SetOpenCallback(func(btn *widget.Button) {
+				btn.Disable()
+				if err := exec.Command("open", "https://github.com/notifications").Start(); err != nil {
+					log.Println(err)
+				}
+				btn.Enable()
+			})
+			modernUI.SetReadCallback(func(btn *widget.Button) {
+				btn.Disable()
 
 				isRead, _ := markAsReadNotification(notificationList[id])
 
 				if isRead {
-					markAsReadButton.Hide()
+					btn.Hide()
 					startAsyncProcess("githubNotifyLoop", githubNotifyLoop)
 				}
+				btn.Enable()
+			})
 
-				markAsReadButton.Enable()
-			}
-
-			openInGithubButton.OnTapped = func() {
-				openInGithubButton.Disable()
-
-				if err := exec.Command("open", "https://github.com/notifications").Start(); err != nil {
-					log.Println(err)
-				}
-
-				openInGithubButton.Enable()
-			}
+			modernUI.Refresh()
 		},
 	)
 }
