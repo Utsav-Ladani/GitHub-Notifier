@@ -32,6 +32,24 @@ func (t *myTheme) Font(style fyne.TextStyle) fyne.Resource {
 }
 
 func (t *myTheme) Icon(name fyne.ThemeIconName) fyne.Resource {
+	currentThemeVariant := fyne.CurrentApp().Settings().ThemeVariant()
+
+	if name == "Settings" {
+		if currentThemeVariant == theme.VariantDark {
+			return resourceSettingsWhitePng
+		}
+
+		return resourceSettingsPng
+	}
+
+	if name == "GitHub" {
+		if currentThemeVariant == theme.VariantDark {
+			return resourceGithubWhitePng
+		}
+
+		return resourceGithubPng
+	}
+
 	return theme.DefaultTheme().Icon(name)
 }
 

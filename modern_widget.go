@@ -89,12 +89,7 @@ func (m *ModernUI) CreateRenderer() fyne.WidgetRenderer {
 	status := canvas.NewCircle(statusColor)
 	status.Resize(fyne.NewSize(8, 8))
 
-	themeVariant := fyne.CurrentApp().Settings().ThemeVariant()
-
-	githubIcon := resourceGithubPng
-	if themeVariant == theme.VariantDark {
-		githubIcon = resourceGithubWhitePng
-	}
+	githubIcon := fyne.CurrentApp().Settings().Theme().Icon("GitHub")
 
 	image := canvas.NewImageFromResource(githubIcon)
 	image.FillMode = canvas.ImageFillContain

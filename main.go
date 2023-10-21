@@ -289,8 +289,10 @@ func addNotificationListUI() *widget.List {
 }
 
 func addToolbarUI() fyne.CanvasObject {
+	settingsIcon := fyne.CurrentApp().Settings().Theme().Icon("Settings")
+
 	preference := widget.NewToolbarAction(
-		resourceSettingsPng,
+		settingsIcon,
 		func() {
 			openSettingsPanel()
 		},
