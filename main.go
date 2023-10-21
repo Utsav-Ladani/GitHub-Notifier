@@ -62,9 +62,6 @@ func main() {
 		startAsyncProcess("githubNotifyLoop", githubNotifyLoop)
 	}
 
-	window.SetFixedSize(true)
-	window.SetMaster()
-
 	addSystemStrayMenu()
 	window.SetCloseIntercept(func() {
 		window.Hide()
@@ -256,11 +253,13 @@ func addNotificationListUI() *widget.List {
 		},
 		func(id widget.ListItemID, item fyne.CanvasObject) {
 			title := notificationList[id].GetRepository().GetFullName()
+			ntype := notificationList[id].GetReason()
 			content := notificationList[id].GetSubject().GetTitle()
 			time := notificationList[id].GetUpdatedAt().Time
 
 			modernUI := item.(*ModernUI)
 			modernUI.SetStatus(false)
+			modernUI.SetType(ntype)
 			modernUI.SetProfileName(title)
 			modernUI.SetMessage(content)
 			modernUI.SetTime(time)

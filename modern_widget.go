@@ -105,6 +105,8 @@ func (m *ModernUI) CreateRenderer() fyne.WidgetRenderer {
 
 	message := canvas.NewText(m.Message, theme.ForegroundColor())
 	message.Resize(message.MinSize())
+	message.Text = trimmedText(m.Message, message.Size().Width, &fyne.TextStyle{})
+	message.Refresh()
 
 	timeColor := fyne.CurrentApp().Settings().Theme().Color("Time", theme.VariantLight)
 	time := canvas.NewText(convertTimeToTimeAgo(m.Time), timeColor)
@@ -214,7 +216,7 @@ func (m *modernUIRenderer) Refresh() {
 	m.ntype.Text = (m.ModernUI.Type)
 	m.ntype.Refresh()
 
-	m.message.Text = (m.ModernUI.Message)
+	m.message.Text = trimmedText(m.ModernUI.Message, m.message.Size().Width, &fyne.TextStyle{})
 	m.message.Refresh()
 
 	m.time.Text = (convertTimeToTimeAgo(m.ModernUI.Time))
@@ -238,13 +240,11 @@ func (m *modernUIRenderer) Resize(size fyne.Size) {
 	readBtnPosY := float32(m.image.Position().Y + m.image.Size().Height/2.0 - m.readBtn.Size().Height/2.0)
 
 	m.readBtn.Move(fyne.NewPos(readBtnPosX, readBtnPosY))
-	// m.readBtn.Resize(m.readBtn.Size())
 
 	openBtnPosX := float32(m.readBtn.Position().X - m.openBtn.Size().Width - padding)
 	openBtnPosY := float32(m.readBtn.Position().Y)
 
 	m.openBtn.Move(fyne.NewPos(openBtnPosX, openBtnPosY))
-	// m.openBtn.Resize(m.openBtn.Size())
 
 	namePosX := float32(m.image.Position().X + m.image.Size().Width + padding)
 	namePosY := float32(m.image.Position().Y + m.image.Size().Height/2.0 - m.name.Size().Height)
@@ -263,12 +263,27 @@ func (m *modernUIRenderer) Resize(size fyne.Size) {
 
 	m.message.Move(fyne.NewPos(messagePosX, messagePosY))
 	m.message.Resize(fyne.NewSize(size.Width-messagePosX-padding, m.message.MinSize().Height))
+	m.message.Text = trimmedText(m.ModernUI.Message, m.message.Size().Width, &fyne.TextStyle{})
+	m.message.Refresh()
 
 	timePosX := float32(m.message.Position().X)
 	timePosY := float32(m.message.Position().Y + m.message.Size().Height + padding/2.0)
 
 	m.time.Move(fyne.NewPos(timePosX, timePosY))
 	m.time.Resize(fyne.NewSize(size.Width-timePosX-padding, m.time.MinSize().Height))
+}
+
+func trimmedText(text string, width float32, textStyle *fyne.TextStyle) string {
+	textLen := len(text)
+	textSize := fyne.MeasureText(text, theme.TextSize(), *textStyle)
+
+	if textSize.Width > width {
+		sizePerChar := textSize.Width / float32(textLen)
+		charsThatFit := int(width / sizePerChar)
+		return text[:charsThatFit-1] + "..."
+	}
+
+	return text
 }
 
 func convertTimeToTimeAgo(t time.Time) string {
