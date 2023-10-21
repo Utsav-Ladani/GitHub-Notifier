@@ -10,10 +10,16 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+var imageCache map[string]fyne.Resource
+
 func NewModernUI() fyne.CanvasObject {
+	if imageCache == nil {
+		imageCache = make(map[string]fyne.Resource)
+	}
+
 	modernUI := &ModernUI{
 		Status:       true,
-		ProfileImage: "github.png",
+		ProfileImage: "",
 		ProfileName:  "GitHub",
 		Type:         "Issue",
 		Message:      "GitHub is how people build software. Millions of developers and companies build, ship, and maintain their software on GitHub—the largest and most advanced development platform in the world.",
@@ -98,6 +104,8 @@ func (m *ModernUI) CreateRenderer() fyne.WidgetRenderer {
 	name := canvas.NewText(m.ProfileName, theme.ForegroundColor())
 	name.TextStyle.Bold = true
 	name.Resize(name.MinSize())
+	name.Text = trimmedText(m.ProfileName, name.Size().Width, &fyne.TextStyle{Bold: true})
+	name.Refresh()
 
 	ntypeColor := fyne.CurrentApp().Settings().Theme().Color("NType", theme.VariantLight)
 	ntype := canvas.NewText(m.Type, ntypeColor)
@@ -207,10 +215,10 @@ func (m *modernUIRenderer) Refresh() {
 
 	m.status.Refresh()
 
-	m.image.File = m.ModernUI.ProfileImage
+	m.image.Resource = getImageFromURL(m.ModernUI.ProfileImage)
 	m.image.Refresh()
 
-	m.name.Text = (m.ModernUI.ProfileName)
+	m.name.Text = trimmedText(m.ModernUI.ProfileName, m.name.Size().Width, &fyne.TextStyle{Bold: true})
 	m.name.Refresh()
 
 	m.ntype.Text = (m.ModernUI.Type)
@@ -257,6 +265,8 @@ func (m *modernUIRenderer) Resize(size fyne.Size) {
 
 	m.ntype.Move(fyne.NewPos(ntypePosX, ntypePosY))
 	m.ntype.Resize(fyne.NewSize(m.openBtn.Position().X-ntypePosX-padding, m.ntype.MinSize().Height))
+	m.name.Text = trimmedText(m.ModernUI.ProfileName, m.name.Size().Width, &fyne.TextStyle{Bold: true})
+	m.name.Refresh()
 
 	messagePosX := float32(m.image.Position().X)
 	messagePosY := float32(m.image.Position().Y + m.image.Size().Height + padding)
@@ -279,11 +289,32 @@ func trimmedText(text string, width float32, textStyle *fyne.TextStyle) string {
 
 	if textSize.Width > width {
 		sizePerChar := textSize.Width / float32(textLen)
-		charsThatFit := int(width / sizePerChar)
-		return text[:charsThatFit-1] + "..."
+		charsThatFit := int(width/sizePerChar) - 1
+
+		if charsThatFit < 0 {
+			charsThatFit = 0
+		}
+
+		return text[:charsThatFit] + "..."
 	}
 
 	return text
+}
+
+func getImageFromURL(url string) fyne.Resource {
+	if imageCache[url] != nil {
+		return imageCache[url]
+	}
+
+	image, err := fyne.LoadResourceFromURLString(url)
+
+	if err != nil {
+		return fyne.CurrentApp().Settings().Theme().Icon("GitHub")
+	}
+
+	imageCache[url] = image
+
+	return imageCache[url]
 }
 
 func convertTimeToTimeAgo(t time.Time) string {

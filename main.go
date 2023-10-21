@@ -21,6 +21,7 @@ import (
 
 const APP_ID string = "org.mygithub.notification"
 const REPEAT_TIME time.Duration = time.Second * 30
+const DAY_OLDER int = 10000
 
 var notifierApp fyne.App
 var window fyne.Window
@@ -76,7 +77,7 @@ func fetchNotifications(ctx context.Context) ([]*github.Notification, error) {
 	client := github.NewClient(nil).WithAuthToken(github_token)
 
 	opt := &github.NotificationListOptions{
-		Since: time.Now().AddDate(0, 0, -5),
+		Since: time.Now().AddDate(0, 0, -DAY_OLDER),
 	}
 
 	ctxTimeOut, cancel := context.WithTimeout(ctx, time.Second*10)
@@ -256,16 +257,27 @@ func addNotificationListUI() *widget.List {
 			ntype := notificationList[id].GetReason()
 			content := notificationList[id].GetSubject().GetTitle()
 			time := notificationList[id].GetUpdatedAt().Time
+			openInBrowserURL := notificationList[id].GetRepository().GetHTMLURL()
+			avatarURL := notificationList[id].GetRepository().GetOwner().GetAvatarURL()
+
+			if avatarURL != "" {
+				avatarURL += "&s=40"
+			}
 
 			modernUI := item.(*ModernUI)
 			modernUI.SetStatus(false)
+			modernUI.SetProfileImage(avatarURL)
 			modernUI.SetType(ntype)
 			modernUI.SetProfileName(title)
 			modernUI.SetMessage(content)
 			modernUI.SetTime(time)
 			modernUI.SetOpenCallback(func(btn *widget.Button) {
+				if openInBrowserURL == "" {
+					return
+				}
+
 				btn.Disable()
-				if err := exec.Command("open", "https://github.com/notifications").Start(); err != nil {
+				if err := exec.Command("open", openInBrowserURL).Start(); err != nil {
 					log.Println(err)
 				}
 				btn.Enable()
