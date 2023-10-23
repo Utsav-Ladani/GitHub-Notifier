@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"log"
 	"os/exec"
+	"runtime"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -21,7 +22,7 @@ import (
 
 const APP_ID string = "org.mygithub.notification"
 const REPEAT_TIME time.Duration = time.Second * 30
-const DAY_OLDER int = 10000
+const DAY_OLDER int = 5
 
 var notifierApp fyne.App
 var window fyne.Window
@@ -257,7 +258,7 @@ func addNotificationListUI() *widget.List {
 			ntype := notificationList[id].GetReason()
 			content := notificationList[id].GetSubject().GetTitle()
 			time := notificationList[id].GetUpdatedAt().Time
-			openInBrowserURL := notificationList[id].GetRepository().GetHTMLURL()
+			url := notificationList[id].GetRepository().GetHTMLURL()
 			avatarURL := notificationList[id].GetRepository().GetOwner().GetAvatarURL()
 
 			if avatarURL != "" {
@@ -272,14 +273,12 @@ func addNotificationListUI() *widget.List {
 			modernUI.SetMessage(content)
 			modernUI.SetTime(time)
 			modernUI.SetOpenCallback(func(btn *widget.Button) {
-				if openInBrowserURL == "" {
+				if url == "" {
 					return
 				}
 
 				btn.Disable()
-				if err := exec.Command("open", openInBrowserURL).Start(); err != nil {
-					log.Println(err)
-				}
+				openURLInBrowser(url)
 				btn.Enable()
 			})
 			modernUI.SetReadCallback(func(btn *widget.Button) {
@@ -368,4 +367,23 @@ func startAsyncProcess(name string, process func(ctx context.Context)) {
 	ctxMap[name] = &cancel
 
 	go process(ctx)
+}
+
+func openURLInBrowser(url string) {
+	var err error
+
+	switch runtime.GOOS {
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("cmd", "/c", "start", url).Start()
+	default:
+		log.Println("Unsupported platform")
+	}
+
+	if err != nil {
+		log.Println(err)
+	}
 }
